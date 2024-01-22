@@ -27,26 +27,3 @@ public class AppTest {
         assertTrue(true);
     }
 }
-
-/*@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringConfig.class})
-public class AppTest {
-    private EntityManager entityManager;
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        entityManager = JPAUtil.getEntityManagerFactory().createEntityManager();
-//        entityManager.getTransaction().begin();
-    }
-
-    @AfterEach
-    public void tearDown() {
-//        entityManager.getTransaction().rollback();
-        entityManager.close();
-    }
-
-    @Test
-    public void load() {
-        assertTrue(true);
-    }
-}*/
