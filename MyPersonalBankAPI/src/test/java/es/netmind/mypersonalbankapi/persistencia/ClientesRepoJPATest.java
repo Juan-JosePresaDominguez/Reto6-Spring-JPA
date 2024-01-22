@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -128,6 +129,7 @@ class ClientesRepoJPATest {
     }
 
     @Test
+    @Transactional
     void dadosClientes_cuandodeleteClient_entoncesClienteDelete() throws Exception {
         //Borrar cliente por Id
         Personal cliente = new Personal(null, "Ricardo", "ricardo@a.com", "Netmind 23", LocalDate.now(), true, false, "12345678J");

@@ -1,21 +1,42 @@
 package es.netmind.mypersonalbankapi.modelos.prestamos;
 
+import es.netmind.mypersonalbankapi.modelos.clientes.Cliente;
+import lombok.*;
+
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@Entity
 public class Prestamo {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    @Column(name = "fecha_concesion")
     private LocalDate fechaConcesion;
     private Double monto;
     private Double saldo;
     private Double mensualidad;
     private Integer anios;
+    @Transient
     private List<Pago> pagos;
+    @Transient
     private List<Mora> moras;
     private Integer interes;
+    @Column(name = "interes_mora")
     private Integer interesMora;
     private boolean moroso;
     private boolean liquidado;
+
+    @ManyToOne(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
+    @JoinColumn(name = "cliente_id")
+    @ToString.Exclude   //Evitar bucles infinitos
+    private Cliente myCliente;
 
     /* CONSTRUCTOR */
     public Prestamo(Integer id, LocalDate fechaConcesion, Double monto, Double saldo, Integer interes, Integer interesMora, boolean moroso, boolean liquidado, Integer anios) {

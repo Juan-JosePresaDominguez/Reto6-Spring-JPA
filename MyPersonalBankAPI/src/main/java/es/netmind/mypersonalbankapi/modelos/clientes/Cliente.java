@@ -15,6 +15,8 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 @Entity
+//@Table(name = "cliente")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public abstract class Cliente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +29,10 @@ public abstract class Cliente {
     private boolean moroso;
     @Transient
     private List<Cuenta> cuentas;
-    @Transient
+    //@Transient
+    @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER, mappedBy = "myCliente")
+//    @JoinColumn(name = "cliente_id")
+//    @ToString.Exclude   //Evitar bucles infinitos
     private List<Prestamo> prestamos;
 
     /* CONSTRUCTOR */

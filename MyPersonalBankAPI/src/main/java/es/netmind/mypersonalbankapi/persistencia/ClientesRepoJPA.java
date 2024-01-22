@@ -18,6 +18,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static es.netmind.mypersonalbankapi.exceptions.ErrorCode.INVALIDCLIENT;
+import static es.netmind.mypersonalbankapi.exceptions.ErrorCode.NONEXISTINGCLIENT;
+
 @Getter
 @Setter
 @Repository
@@ -52,141 +55,81 @@ public class ClientesRepoJPA implements IClientesRepo {
 
     @Override
     public List<Cliente> getAll() throws Exception {
-        List<Cliente> clientes = new ArrayList<>();
-
-        String sql = "SELECT * FROM cliente u WHERE 1";
-
-        try (
-                //Connection conn = DriverManager.getConnection(db_url);
-                PreparedStatement stmt = conn.prepareStatement(sql);
-        ) {
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                if (rs.getString("dtype").equals("Empresa")) {
-                    clientes.add(new Empresa(
-                            rs.getInt("id"),
-                            rs.getString("nombre"),
-                            rs.getString("email"),
-                            rs.getString("direccion"),
-                            rs.getDate("alta").toLocalDate(),
-                            rs.getBoolean("activo"),
-                            rs.getBoolean("moroso"),
-                            rs.getString("cif"),
-                            new String[]{rs.getString("unidades_de_negocio")}));
-                } else {
-                    clientes.add(new Personal(
-                            rs.getInt("id"),
-                            rs.getString("nombre"),
-                            rs.getString("email"),
-                            rs.getString("direccion"),
-                            rs.getDate("alta").toLocalDate(),
-                            rs.getBoolean("activo"),
-                            rs.getBoolean("moroso"),
-                            rs.getString("dni")));
-                }
-            }
-
-        } catch (SQLException e) {
+        try {
+            return em.createQuery("SELECT s FROM Cliente s", Cliente.class).getResultList();
+        } catch (Exception e) {
             e.printStackTrace();
-            throw new Exception(e);
+            return null;
         }
-
-        return clientes;
     }
 
     @Override       //Devuelve el cliente indicado por parámetro
     public Cliente getClientById(Integer id) throws Exception {
-        return em.find(Cliente.class, id);
+        try {
+            if (em.find(Cliente.class, id) == null) {
+                throw new ClienteException(NONEXISTINGCLIENT);
+            } else {
+                return em.find(Cliente.class, id);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override       //INSERT
     @Transactional
     public Cliente addClient(Cliente cliente) throws Exception {
-        em.persist(cliente);
-        return cliente;
+        if (cliente.validar()) {
+            try {
+                em.persist(cliente);
+                return cliente;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            throw new ClienteException(INVALIDCLIENT);
+        }
     }
 
     @Override
     @Transactional
     public boolean deleteClient(Cliente cliente) throws Exception {
-        String sql = "DELETE FROM cliente WHERE id=?";
-
-        try (
-                //Connection conn = DriverManager.getConnection(db_url);
-                PreparedStatement stmt = conn.prepareStatement(sql);
-        ) {
-            stmt.setInt(1, cliente.getId());
-
-            int rows = stmt.executeUpdate();
-            System.out.println(rows);
-
-            if (rows <= 0) {
-                throw new ClienteNotFoundException();
-            }
-
-        } catch (SQLException e) {
+        try {
+            em.remove(cliente);
+            return true;
+        } catch (Exception e) {
             e.printStackTrace();
-            throw e;
+            return false;
         }
-
-        return true;
     }
 
     @Override
     @Transactional
     public Cliente updateClient(Cliente cliente) throws Exception {
-        String sql = "UPDATE cliente SET dtype=?, nombre=?, email=?, direccion=?, alta=?, activo=?, moroso=?, cif=?, unidades_de_negocio=?, dni=? WHERE id=?";
-
-//        try (
-//                Connection conn = DriverManager.getConnection(db_url);
-//                PreparedStatement stmt = conn.prepareStatement(sql);
-//        ) {
-        try {
-            System.out.println("Traza 1");
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            if (cliente instanceof Personal) {
-                System.out.println("Traza 2");
-                stmt.setString(1, "Personal");
-                stmt.setString(8, null);
-                stmt.setString(9, null);
-                stmt.setString(10, ((Personal) cliente).getDni());
-            } else {
-                System.out.println("Traza 3");
-                stmt.setString(1, "Empresa");
-                stmt.setString(8, ((Empresa) cliente).getCif());
-                stmt.setString(9, Arrays.toString(((Empresa) cliente).getUnidadesNegocio()));
-                stmt.setString(10, null);
+        if (cliente.validar()) {
+            try {
+                Cliente clActual = em.find(Cliente.class, cliente.getId());
+                clActual.setNombre(cliente.getNombre());
+                clActual.setEmail(cliente.getEmail());
+                clActual.setDireccion(cliente.getDireccion());
+                clActual.setActivo(cliente.isActivo());
+                clActual.setMoroso(cliente.isMoroso());
+                if (clActual instanceof Personal) {
+                    ((Personal) clActual).setDni(((Personal) cliente).getDni());
+                } else if (clActual instanceof Empresa) {
+                    ((Empresa) clActual).setCif(((Empresa) cliente).getCif());
+                    ((Empresa) clActual).setUnidadesNegocio(((Empresa) cliente).getUnidadesNegocio());
+                }
+                return clActual;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
             }
-
-            System.out.println("Traza 4");
-            stmt.setString(2, cliente.getNombre());
-            stmt.setString(3, cliente.getEmail());
-            stmt.setString(4, cliente.getDireccion());
-            stmt.setString(5, cliente.getAlta().toString());
-            stmt.setBoolean(6, cliente.isActivo());
-            stmt.setBoolean(7, cliente.isMoroso());
-            stmt.setInt(11, cliente.getId());
-
-            System.out.println("Traza 5");
-            int rows = stmt.executeUpdate();
-
-            System.out.println(rows);
-
-            if (rows <= 0) {
-                throw new ClienteNotFoundException();     // Si queremos que devuelva excepción al no encontrar cliente
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new Exception(e);
+        } else {
+            throw new ClienteException(INVALIDCLIENT);
         }
-
-        return cliente;
-    }
-
-    public void setDb_url(String connectUrl) {
-        this.db_url = connectUrl;
     }
 
     public void connectClientRepo() throws Exception {
