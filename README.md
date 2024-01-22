@@ -22,7 +22,7 @@ Base:
 1. Añadir la dependencias de Spring Boot
 2. Actualizar los test para que tengan en cuenta el contexto de persistencia
 	 - Pasa los test: fallarán
-3. Añade le applicatión.properties
+3. Añade el applicatión.properties
 4. Actualiza las clases de configuración de Spring
 
 USs (Historias de Usuario):                  	* Implementar todo por historias de usuario.
